@@ -1,5 +1,5 @@
-import sqlite3 as sq
-from tqdm import tqdm
+import sqlite3 as sq # Importerer sqlite3 som sq
+from tqdm import tqdm # Importerer tqdm for å vise hvor langt programmet er kommet. Må installeres med pip install tqdm
 
 conn = sq.connect('kunde.db') # Lager en database
 cur = conn.cursor() # Lager en cursor
@@ -37,7 +37,6 @@ def table(): # Lager funksjonen table()
 
     conn.commit() # Lagrer endringene
 
-
 def postnummer(): # Lager funksjonen postnummer
     f = open('Postnummerregister.csv', 'r') # Åpner filen Postnummerregister.csv i read
 
@@ -49,7 +48,6 @@ def postnummer(): # Lager funksjonen postnummer
 
     conn.commit() # Lagrer endringene
 
-
 def kunder(): # Lager funksjonen kunder
     f = open('randoms.csv', 'r') # Åpner filen randoms.csv i read
 
@@ -60,6 +58,17 @@ def kunder(): # Lager funksjonen kunder
     print("Informasjon hentet om kunder") # Printer ut at informasjonen er hentet
 
     conn.commit() # Lagrer endringene
+
+def info(): # Lager funksjonen info
+    svar=(input("Vil du se info om kunder? (Ja/Nei): ")) # Spør brukeren om de vil se info om kunder
+    if svar == "Ja" or svar == "ja" or svar == "j" or svar == "J": # Sjekker om svaret er ja
+        find() # Kaller på funksjonen find
+
+    if svar == "Nei" or svar == "nei" or svar == "n" or svar == "N": # Sjekker om svaret er nei
+        print("Ok, da avslutter vi programmet.") # Printer ut at vi avslutter programmet
+        exit() # Avslutter programmet
+
+    conn.commit
 
 def find(): # Lager funksjonen find
     knr=int(input("Hvilken kunde vil du se info om? (Kundenr): ")) # Spør brukeren om hvilken kunde de vil se info om
@@ -75,19 +84,6 @@ def find(): # Lager funksjonen find
     print(cur.fetchall()) # Printer ut info om kunden
 
     conn.commit() # Lagrer endringene
-
-def info(): # Lager funksjonen info
-    svar=(input("Vil du se info om kunder? (Ja/Nei): ")) # Spør brukeren om de vil se info om kunder
-    if svar == "Ja" or svar == "ja" or svar == "j" or svar == "J": # Sjekker om svaret er ja
-        find() # Kaller på funksjonen find
-
-    if svar == "Nei" or svar == "nei" or svar == "n" or svar == "N": # Sjekker om svaret er nei
-        print("Ok, da avslutter vi programmet.") # Printer ut at vi avslutter programmet
-        exit() # Avslutter programmet
-
-    conn.commit
-
-
 
 def main(): # Lager funksjonen main
     table() # Kaller på funksjonen table
