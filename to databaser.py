@@ -26,14 +26,14 @@ def table(): # Lager funksjonen table()
         except:
             sq.OperationalError
             
-    cur.execute("CREATE TABLE IF NOT EXISTS kunder (\
-                    Kundenr    INTEGER PRIMARY KEY AUTOINCREMENT, \
-                    fnavn      TEXT    NOT NULL, \
-                    enavn      TEXT    NOT NULL, \
-                    epost      TEXT    NOT NULL,\
-                    tlf        TEXT    , \
-                    postnummer TEXT, \
-                    FOREIGN    KEY (postnummer) REFERENCES postnummer (post));")
+    cur.execute('''CREATE TABLE IF NOT EXISTS kunder (
+                    Kundenr    INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    fnavn      TEXT    NOT NULL, 
+                    enavn      TEXT    NOT NULL, 
+                    epost      TEXT    NOT NULL,
+                    tlf        TEXT    , 
+                    postnummer TEXT NOT NULL, 
+                    FOREIGN    KEY (postnummer) REFERENCES postnummer (post));''')
 
     conn.commit() # Lagrer endringene
 
@@ -61,6 +61,21 @@ def kunder(): # Lager funksjonen kunder
 
     conn.commit() # Lagrer endringene
 
+def find(): # Lager funksjonen find
+    knr=int(input("Hvilken kunde vil du se info om? (Kundenr): ")) # Spør brukeren om hvilken kunde de vil se info om
+    if knr>201: # Sjekker om kundenr er større enn 200
+        print("Vi har ikke så mange kunder, prøv et lavere nummer. (Maks 200 kunder)") # Printer ut at vi ikke har så mange kunder
+        find() # Kaller på funksjonen find igjen
+
+    if knr<2: # Sjekker om kundenr er mindre enn 2
+        print("Dette tallet er for lavt, prøv et høyere nummer. (Minst 2)") # Printer ut at dette tallet er for lavt
+        find() # Kaller på funksjonen find igjen
+
+    cur.execute("SELECT post.postnummer, post.kommunenavn, post.kategori, post.kommunenummer, post.poststed, kunder.kundenr, Kunder.fnavn, Kunder.enavn, Kunder.epost, Kunder.tlf, Kunder.postnummer FROM post INNER JOIN Kunder ON Kunder.postnummer = post.postnummer WHERE Kunder.kundenr = ?",(knr,))
+    print(cur.fetchall()) # Printer ut info om kunden
+
+    conn.commit() # Lagrer endringene
+
 def info(): # Lager funksjonen info
     svar=(input("Vil du se info om kunder? (Ja/Nei): ")) # Spør brukeren om de vil se info om kunder
     if svar == "Ja" or svar == "ja" or svar == "j" or svar == "J": # Sjekker om svaret er ja
@@ -71,24 +86,6 @@ def info(): # Lager funksjonen info
         exit() # Avslutter programmet
 
     conn.commit
-
-def find(): # Lager funksjonen find
-    knr=int(input("Hvilken kunde vil du se info om? (Kundenr): ")) # Spør brukeren om hvilken kunde de vil se info om
-    if knr>201: # Sjekker om kundenr er større enn 200
-        print("Vi har ikke så mange kunder, prøv et lavere nummer. (Maks 200 kunder)") # Printer ut at vi ikke har så mange kunder
-        find() # Kaller på funksjonen find igjen
-
-    if knr<2: # Sjekker om kundenr er mindre enn 2
-        print("Dette taller er for lavt, prøv et høyere nummer. (Minst 2)") # Printer ut at dette tallet er for lavt
-        find() # Kaller på funksjonen find igjen
-
-    cur.execute("SELECT post.kommunenavn, post.kategori, post.kommunenummer, post.poststed, kunder.Kundenr, kunder.fnavn, kunder.enavn, kunder.epost, kunder.tlf, kunder.postnummer FROM post INNER JOIN kunder ON kunder.[postnummer]=post.[postnummer] WHERE kunder.Kundenr = ?",(knr, ))
-    cur.fetchall() # Printer ut info om kunden
-    print(cur.fetchall()) # Printer ut info om kunden
-
-    conn.commit() # Lagrer endringene
-
-
 
 
 
