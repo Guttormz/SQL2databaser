@@ -1,96 +1,94 @@
-import sqlite3 as sq # Importerer sqlite3 som sq
-from tqdm import tqdm # Importerer tqdm for å vise hvor langt programmet er kommet. Må installeres med pip install tqdm
+import sqlite3 as sq
+from tqdm import tqdm # pip install tqdm
+import csv
+import pandas as pd # pip install pandas
 
 conn = sq.connect('kunde.db') # Lager en database
 cur = conn.cursor() # Lager en cursor
 
 
-def table(): # Lager funksjonen table()
+def table():
 
-    if cur.execute("SELECT name FROM sqlite_schema WHERE type='table' AND name='post'"): # Sjekker om tabellen postnummer eksisterer
+    if cur.execute("SELECT name FROM sqlite_schema WHERE type='table' AND name='post'"): # Sjekker om tabellen post eksisterer
         try:
-            cur.execute("DROP TABLE post") # Sletter tabellen postnummer
+            cur.execute("DROP TABLE post") # Prøver å slette tabellen post
         except:
-            sq.OperationalError
+           sq.OperationalError # Hvis tabellen ikke eksisterer, så får vi en feilmelding. Da hopper den til neste linje
 
-    cur.execute('''CREATE TABLE IF NOT EXISTS post (
-                    postnummer      TEXT PRIMARY KEY, 
-                    poststed      TEXT    NOT NULL, 
-                    kommunenummer TEXT NOT NULL, 
-                    kommunenavn TEXT NOT NULL, 
-                    kategori TEXT NOT NULL);''') # Lager tabellen postnummer
+    cur.execute('CREATE TABLE IF NOT EXISTS post (\
+                    postnummer      TEXT PRIMARY KEY,\
+                    Poststed      TEXT    NOT NULL, \
+                    Kommunenr TEXT NOT NULL, \
+                    Kommunenavn TEXT NOT NULL,\
+                    kategori TEXT NOT NULL);') # Lager tabellen post hvor postnummer er primærnøkkel
 
     if cur.execute("SELECT name FROM sqlite_schema WHERE type='table' AND name='kunder'"): # Sjekker om tabellen kunder eksisterer
         try:
-            cur.execute("DROP TABLE kunder") # Sletter tabellen kunder
+            cur.execute("DROP TABLE kunder") # Prøver å slette tabellen kunder
         except:
-            sq.OperationalError
+            sq.OperationalError # Hvis tabellen ikke eksisterer, så får vi en feilmelding. Da hopper den til neste linje
             
-    cur.execute('''CREATE TABLE IF NOT EXISTS kunder (
-                    Kundenr    INTEGER PRIMARY KEY AUTOINCREMENT, 
-                    fnavn      TEXT    NOT NULL, 
-                    enavn      TEXT    NOT NULL, 
-                    epost      TEXT    NOT NULL,
-                    tlf        TEXT    , 
-                    postnummer TEXT NOT NULL, 
-                    FOREIGN    KEY (postnummer) REFERENCES postnummer (post));''')
+    cur.execute('CREATE TABLE IF NOT EXISTS kunder (\
+                    Kundenr    INTEGER PRIMARY KEY AUTOINCREMENT,\
+                    fnavn      TEXT    NOT NULL,\
+                    enavn      TEXT    NOT NULL,\
+                    epost      TEXT    NOT NULL,\
+                    tlf        TEXT    ,\
+                    postnummer TEXT NOT NULL,\
+                    FOREIGN    KEY (postnummer) REFERENCES postnummer (post));') # Lager tabellen kunder hvor kundenr er primænøkkel og postnummer er en fremmednøkkel til postnummer på post tabellen
 
-    conn.commit() # Lagrer endringene
+def postnummer():
+    with open('postnummerregister.csv', 'r') as f: # Åpner filen postnummerregister.csv i read
+        reader = csv.reader(f) # Leser filen
+        next(reader) # Hopper over første linje
+        for row in tqdm(reader, total=5139): # Går gjennom hver linje i filen, og lager en progressbar
+            cur.execute('INSERT INTO post (postnummer, Poststed, Kommunenr, Kommunenavn, kategori) VALUES (?,?,?,?,?)', row,) # Legger til hver linje i tabellen post
+    print("Informasjon hentet om postnummer") # Sier ifra at informasjonen er hentet
 
-def postnummer(): # Lager funksjonen postnummer
-    f = open('Postnummerregister.csv', 'r') # Åpner filen Postnummerregister.csv i read
+    conn.commit() # Committer endringene
 
-    for line in tqdm(f, total=5139): # Går gjennom hver linje i filen
-        cur.execute('INSERT INTO post (postnummer, poststed, kommunenummer, kommunenavn, kategori) VALUES (?,?,?,?,?)', (line.split(','))) # Legger til hver linje i tabellen postnummer
+def kunder():
+    with open('randoms.csv', 'r') as f: # Åpner filen randoms.csv i read
+        reader = csv.reader(f) # Leser filen
+        next(reader) # Hopper over første linje
+        for line in tqdm(reader, total=200): # Går gjennom hver linje i filen, og lager en progressbar
+            cur.execute('INSERT INTO kunder (fnavn, enavn, epost, tlf, postnummer) VALUES (?,?,?,?,?)', line,) # Legger til hver linje i tabellen kunder
+    print("Informasjon hentet om kunder") # Sier ifra at informasjonen er hentet
 
-    cur.execute("DELETE FROM post WHERE postnummer IS 'Postnummer'") # Sletter linja i tabellen postnummer som inneholder "Postnummer"
-    print("Informasjon hentet om postnummer") # Printer ut at informasjonen er hentet
+    conn.commit() # Committer endringene
 
-    conn.commit() # Lagrer endringene
+def info():
+    svar=(input("Vil du se info om kunder? (Ja/Nei): ")) # Spør brukeren om han vil se info om kunder
+    if svar == "Ja" or svar == "ja" or svar == "j" or svar == "J": # Hvis brukeren svarer ja, så kjører vi funksjonen find()
+        find()
 
-def kunder(): # Lager funksjonen kunder
-    f = open('randoms.csv', 'r') # Åpner filen randoms.csv i read
+    if svar == "Nei" or svar == "nei" or svar == "n" or svar == "N": # Hvis brukeren svarer nei, så avslutter vi programmet
+        print("Ok, da avslutter vi programmet.") # Sier ifra at programmet avsluttes
+        exit()
 
-    for line in tqdm(f, total=200): # Går gjennom hver linje i filen
-        cur.execute('INSERT INTO kunder (fnavn, enavn, epost, tlf, postnummer) VALUES (?,?,?,?,?)', (line.split(','))) # Legger til hver linje i tabellen kunder
+def find():
+    knr=int(input("Hvilken kunde vil du se info om? (Kundenr): ")) # Spør brukeren om hvilken kunde han vil se info om
+    if knr>200: # Hvis brukeren skriver et nummer som er høyere enn antall kunder, så får han en feilmelding
+        print("Vi har ikke så mange kunder, prøv et lavere nummer. (Maks 200 kunder)") # Sier ifra at vi ikke har så mange kunder
+        find()
 
-    cur.execute("DELETE FROM kunder WHERE fnavn IS 'fname'") # Sletter linja i tabellen kunder som inneholder "fname"
-    print("Informasjon hentet om kunder") # Printer ut at informasjonen er hentet
+    if knr<1: # Hvis brukeren skriver et nummer som er lavere enn 1, så får han en feilmelding
+        print("Dette tallet er for lavt, prøv et høyere nummer. (Minst 2)") # Sier ifra at tallet er for lavt
+        find()
 
-    conn.commit() # Lagrer endringene
+    resultat=cur.execute("SELECT kunder.kundenr, Kunder.fnavn, Kunder.enavn, Kunder.epost, Kunder.tlf, Kunder.postnummer, post.postnummer, post.poststed, post.kommunenr, post.kommunenavn, post.kategori FROM post INNER JOIN Kunder ON Kunder.[postnummer] = post.[postnummer] WHERE Kunder.kundenr = ?",(knr,)) # Henter info om kunden fra tabellene kunder og post
+    print(resultat.fetchall()) # Printer ut info om kunden
+    if resultat.fetchall() == (""):
+        print("Denne kunden har ikke ett gyldig postnummer")
 
-def info(): # Lager funksjonen info
-    svar=(input("Vil du se info om kunder? (Ja/Nei): ")) # Spør brukeren om de vil se info om kunder
-    if svar == "Ja" or svar == "ja" or svar == "j" or svar == "J": # Sjekker om svaret er ja
-        find() # Kaller på funksjonen find
+    info() # Kjører funksjonen info() igjen
 
-    if svar == "Nei" or svar == "nei" or svar == "n" or svar == "N": # Sjekker om svaret er nei
-        print("Ok, da avslutter vi programmet.") # Printer ut at vi avslutter programmet
-        exit() # Avslutter programmet
-
-    conn.commit
-
-def find(): # Lager funksjonen find
-    knr=int(input("Hvilken kunde vil du se info om? (Kundenr): ")) # Spør brukeren om hvilken kunde de vil se info om
-    if knr>201: # Sjekker om kundenr er større enn 200
-        print("Vi har ikke så mange kunder, prøv et lavere nummer. (Maks 200 kunder)") # Printer ut at vi ikke har så mange kunder
-        find() # Kaller på funksjonen find igjen
-
-    if knr<2: # Sjekker om kundenr er mindre enn 2
-        print("Dette tallet er for lavt, prøv et høyere nummer. (Minst 2)") # Printer ut at dette tallet er for lavt
-        find() # Kaller på funksjonen find igjen
-
-    cur.execute("SELECT post.postnummer, post.kommunenavn, post.kategori, post.kommunenummer, post.poststed, kunder.kundenr, Kunder.fnavn, Kunder.enavn, Kunder.epost, Kunder.tlf, Kunder.postnummer FROM post INNER JOIN Kunder ON Kunder.postnummer = post.postnummer WHERE Kunder.kundenr = ?",(knr,))
-    print(cur.fetchall()) # Printer ut info om kunden
-
-    conn.commit() # Lagrer endringene
-
-def main(): # Lager funksjonen main
-    table() # Kaller på funksjonen table
-    postnummer() # Kaller på funksjonen pnummer
-    kunder() # Kaller på funksjonen kunder
-    info() # Kaller på funksjonen info
+def main():
+    table()
+    postnummer()
+    kunder()
+    info()
 
 
-if __name__ == '__main__': # Sjekker om programmet kjøres
-    main() # Kaller på funksjonen main
+if __name__ == '__main__':
+    main()
